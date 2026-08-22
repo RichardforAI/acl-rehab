@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#1F4E79">
+<title>ACL 康复 · 今日打卡</title>
+<style>
+  :root{
+    --blue:#1F4E79; --blue2:#2E75B6; --gray:#9aa0a6; --line:#e6e8eb;
+    --ok:#2E7D32; --part:#B45F06; --no:#C00000;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{margin:0; background:#f4f6f8; color:#1f2933; font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; font-size:15px; padding-bottom:calc(60px + env(safe-area-inset-bottom));}
+  header{background:var(--blue); color:#fff; padding:16px 16px 14px;}
+  header .d{font-size:13px; opacity:.85;}
+  header h1{margin:4px 0 2px; font-size:22px;}
+  header .pday{font-size:13px; background:rgba(255,255,255,.16); display:inline-block; padding:3px 10px; border-radius:12px; margin-top:6px;}
+  .wrap{padding:12px;}
+  .card{background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.08); margin-bottom:10px; overflow:hidden;}
+  .bar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:12px 14px;}
+  .tag{font-size:12px; padding:2px 8px; border-radius:10px; white-space:nowrap;}
+  .tg{display:flex; gap:8px;}
+  .tg button{flex:1; padding:11px; border:1px solid var(--line); background:#fff; border-radius:10px; font-size:15px; color:#555;}
+  .tg button.on{background:var(--blue); color:#fff; border-color:var(--blue); font-weight:600;}
+  .stage{font-size:13px; color:var(--blue2); font-weight:600; margin:2px 0;}
+  .flex{font-size:13px; color:#7a5c00; background:#fff7e0; border-radius:8px; padding:8px 10px;}
+  .sec{font-size:14px; font-weight:700; color:#555; margin:18px 4px 8px;}
+  .cat{display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; margin:14px 4px 6px;}
+  .cat .dot{width:10px; height:10px; border-radius:3px;}
+  .ex{display:flex; align-items:stretch; background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.08); margin-bottom:8px; overflow:hidden; border-left:5px solid var(--cc,#ccc);}
+  .st{width:60px; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:700; color:#c7ccd1; background:#fafbfc; cursor:pointer; user-select:none; flex-shrink:0;}
+  .st.ok{color:var(--ok); background:#eaf5ea;}
+  .st.part{color:var(--part); background:#fbf1e5;}
+  .st.no{color:var(--no); background:#fbecec;}
+  .body{flex:1; padding:10px 12px; min-width:0;}
+  .nm{font-weight:700; font-size:16px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
+  .src{font-size:11px; padding:1px 7px; border-radius:8px; color:#fff; font-weight:600;}
+  .dose{font-size:13px; color:#555; margin:5px 0 0; white-space:pre-line;}
+  .time{font-size:12px; color:#7030A0; margin-top:4px;}
+  .stepper{display:flex; align-items:center; gap:10px; margin-top:6px; font-size:13px; color:#777;}
+  .stepper button{width:30px; height:30px; border-radius:50%; border:1px solid var(--line); background:#fff; font-size:18px; line-height:1; color:#555;}
+  .stepper b{font-size:15px; color:#222; min-width:20px; text-align:center;}
+  .off{opacity:.55;}
+  .off .body{filter:grayscale(.3);}
+  .reason{font-size:11px; color:#fff; background:#b0b6bc; border-radius:8px; padding:1px 7px;}
+  footer{position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid var(--line); padding:10px 14px calc(10px + env(safe-area-inset-bottom)); display:flex; gap:8px; z-index:10;}
+  footer button{flex:1; padding:13px; border:none; border-radius:11px; font-size:15px; font-weight:600; background:var(--blue); color:#fff;}
+  footer button.ghost{background:#fff; color:var(--blue); border:1px solid var(--blue);}
+  .risk{font-size:12px; color:#C00000; line-height:1.6;}
+  .modal{display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:20; align-items:flex-end; justify-content:center;}
+  .modal.show{display:flex;}
+  .mbody{background:#fff; width:100%; max-height:80vh; border-radius:16px 16px 0 0; padding:16px; overflow:auto;}
+  .mbody h3{margin:0 0 8px;}
+  textarea{width:100%; min-height:220px; border:1px solid var(--line); border-radius:10px; padding:10px; font-size:14px; font-family:inherit;}
+  .mbtns{display:flex; gap:8px; margin-top:10px;}
+  .mbtns button{flex:1; padding:12px; border:none; border-radius:10px; font-size:15px; background:var(--blue); color:#fff; font-weight:600;}
+  .mbtns button.ghost{background:#eee; color:#333;}
+  .hint{font-size:12px; color:#999; margin:4px 2px 0;}
+</style>
+</head>
+<body>
+<div id="jsWarn" style="margin:10px 16px;padding:10px 12px;background:#fff3cd;border:1px solid #e0a800;border-radius:10px;font-size:13px;color:#7a5c00;">
+  ⚠️ 如果按钮点不动、显示「今日应做 0 项」，说明当前不是在浏览器中打开。请改用 <b>Safari（iPhone）</b> 或 <b>Chrome（安卓）</b> 打开本文件。
+</div>
+<header>
+  <div class="d" id="todayLine">—</div>
+  <h1>今日康复打卡</h1>
+  <div class="pday" id="pdayLine">—</div>
+  <div class="stage" id="stageLine" style="color:#fff;opacity:.95;"></div>
+  <div class="flex" id="flexLine" style="margin-top:8px;background:rgba(255,255,255,.15);color:#fff;"></div>
+</header>
+
+<div class="wrap">
+  <div class="card bar">
+    <span style="font-weight:700;">方案：</span>
+    <div class="tg" id="verTg">
+      <button data-v="combined" class="on">综合版</button>
+      <button data-v="bysy">北医三院版</button>
+    </div>
+  </div>
+
+  <div class="card bar" id="flexInputWrap">
+    <div style="flex:1;">
+      <div style="font-weight:700;">今日屈膝角度</div>
+      <div class="hint">做完被动屈膝后，记录实际屈到的最大度数</div>
+    </div>
+    <input id="flexInput" type="number" inputmode="numeric" min="0" max="180" placeholder="如 95"
+      style="width:80px;font-size:20px;text-align:center;border:1px solid var(--line);border-radius:10px;padding:8px;">
+  </div>
+
+  <div id="summary" class="card bar" style="justify-content:space-between;">
+    <span>今日应做 <b id="nActive" style="color:var(--blue);">0</b> 项</span>
+    <span>已完成 <b id="nDone" style="color:var(--ok);">0</b> 项</span>
+    <span>部分 <b id="nPart" style="color:var(--part);">0</b> 项</span>
+  </div>
+
+  <div class="sec">▼ 今日要做</div>
+  <div id="activeList"></div>
+
+  <div class="sec" style="color:#999;">▽ 今日无需做</div>
+  <div id="inactiveList"></div>
+
+  <div class="card bar" style="margin-top:6px;">
+    <div class="risk">
+      <b>⚠️ 风险信号（出现请尽快复诊）</b><br>
+      ① 体温>38°C 伴手术部位红肿热痛或再次受伤；② 胸闷气短、上肢挤压痛；③ 小腿后侧挤压痛/勾脚时小腿痛。
+    </div>
+  </div>
+  <div class="hint" style="margin:8px 2px 0;">记录自动保存在本机浏览器；建议每晚「生成记录」后抄回 Excel，并可在电脑 Excel 中留档。</div>
+</div>
+
+<footer>
+  <button id="btnExport">生成记录</button>
+  <button id="btnBackup" class="ghost">备份</button>
+  <button id="btnRestore" class="ghost">恢复</button>
+</footer>
+
+<div class="modal" id="modal">
+  <div class="mbody">
+    <h3>今日打卡记录（复制后抄回 Excel）</h3>
+    <textarea id="outText" readonly></textarea>
+    <div class="mbtns">
+      <button id="btnCopy">复制文字</button>
+      <button id="btnClose" class="ghost">关闭</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="backupModal">
+  <div class="mbody">
+    <h3>备份记录（复制后存到微信/备忘录）</h3>
+    <div class="hint" style="margin:0 0 8px;">下面文字包含本手机浏览器里所有已保存的打卡记录，复制后发到微信「文件传输助手」或存进备忘录即可。</div>
+    <textarea id="backupText" readonly></textarea>
+    <div class="mbtns">
+      <button id="btnBackupCopy">复制备份</button>
+      <button id="btnBackupClose" class="ghost">关闭</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="restoreModal">
+  <div class="mbody">
+    <h3>恢复记录（粘贴备份文字）</h3>
+    <div class="hint" style="margin:0 0 8px;">把之前备份的文字粘贴到下面，点「恢复」即可找回。</div>
+    <textarea id="restoreText" placeholder="粘贴备份内容…"></textarea>
+    <div class="mbtns">
+      <button id="btnRestoreDo">恢复</button>
+      <button id="btnRestoreClose" class="ghost">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// 若 JS 正常执行，隐藏"请用浏览器打开"提示
+try{ document.getElementById("jsWarn").style.display = "none"; }catch(e){}
+
+// ================= 数据 =================
+var SURGERY = new Date(2026, 7, 11); // 2026-08-11 术后第0天
+
+var CAT_COLORS = {
+  "防血栓·基础激活": ["#C6EFCE", "#006100"],
+  "关节活动度": ["#BDD7EE", "#1F4E79"],
+  "肌肉力量": ["#FFE0B2", "#B45F06"],
+  "平衡稳定": ["#E1D5E7", "#5B3A8C"],
+  "力量进阶": ["#F8CBAD", "#9C3A00"],
+  "冰敷恢复": ["#D0E8F2", "#0F6E8C"]
+};
+var SRC_COLOR = {"两院一致":"#2E7D32","北医三院":"#B45F06","北大国际":"#1F4E79"};
+
+// 每个动作: [名称, 数量要求, 开始天, 结束天, 来源(综合版), 建议时间]
+var DATA = {
+  combined: [
+    ["防血栓·基础激活",[
+      ["踝泵练习","北医三院 15-20分/时·6-8时/天\n北大国际 勾脚尖5秒→踩5秒·500-1000次/天",0,56,"两院一致","全天分散"],
+      ["股四头肌收缩（大腿绷劲）","北医三院 5-10分/时·3-4时/天\n北大国际 收缩5秒→放松2秒·500次/天",0,90,"两院一致","全天分散"],
+      ["腘绳肌收缩","下压5秒→放松2秒·500次/天",0,90,"北大国际","全天分散"],
+    ]],
+    ["关节活动度",[
+      ["推髌骨","2-3分/次·5-6次/天",4,56,"北医三院","全天穿插"],
+      ["被动伸膝","北医三院 10-20分·1-2次/天\n北大国际 20分/次·每天2次·3个月",1,90,"两院一致","上午/下午"],
+      ["被动屈膝","北医三院 15-20分·1次/天\n北大国际 上午1次·维持10分",4,84,"两院一致","上午1次"],
+    ]],
+    ["肌肉力量",[
+      ["直抬腿","北医三院 5-10秒/次·10次/组·2-3组\n北大国际 抬15°至力竭",1,42,"两院一致","午后"],
+      ["侧抬腿","北医三院 5-10秒/次·10-20次/组·2-3组\n北大国际 15次×3组",4,42,"两院一致","午后"],
+      ["后抬腿","北医三院 5-10秒/次·10-20次/组·2-3组\n北大国际 15次×3组",4,42,"两院一致","午后"],
+      ["单腿臀桥","15次×3组",7,90,"北大国际","午后"],
+    ]],
+    ["平衡稳定",[
+      ["单腿站立","睁30s+闭15s·2-3个·2组/天",21,180,"北医三院","下午"],
+    ]],
+    ["力量进阶",[
+      ["靠墙静蹲","30-120秒/个·2-3个/天或隔天",35,180,"北医三院","傍晚"],
+      ["双腿下蹲","10-20个/组·2-3组/天或隔天",35,180,"北医三院","傍晚"],
+      ["前向弓步","10-20个/组·2-3组/天或隔天",35,180,"北医三院","傍晚"],
+      ["后向弓步","10-20个/组·2-3组/天或隔天",35,180,"北医三院","傍晚"],
+      ["静蹲（扎马步）","1-2分/次",70,180,"北大国际","傍晚"],
+    ]],
+    ["冰敷恢复",[
+      ["冰敷","屈膝后立即20分\n其他2-3次/天",0,180,"两院一致","屈膝后＋2-3次"],
+    ]],
+  ],
+  bysy: [
+    ["防血栓·基础激活",[
+      ["踝泵练习","15-20分/小时·6-8小时/天",0,56,"北医三院","全天分散"],
+      ["大腿绷劲","5-10分/小时·3-4小时/天",0,56,"北医三院","全天分散"],
+    ]],
+    ["关节活动度",[
+      ["被动伸膝","10-20分/次·1-2次/天",1,14,"北医三院","上午/下午"],
+      ["推髌骨","2-3分/次·5-6次/天",4,56,"北医三院","全天穿插"],
+      ["被动屈膝","15-20分/次·1次/天",4,84,"北医三院","上午1次"],
+    ]],
+    ["肌肉力量",[
+      ["直抬腿","5-10秒/次·10次/组·2-3组",1,42,"北医三院","午后"],
+      ["后向直抬腿","5-10秒/次·10-20次/组·2-3组",4,42,"北医三院","午后"],
+      ["外向直抬腿","同上",4,42,"北医三院","午后"],
+      ["内侧抬腿","同上",4,42,"北医三院","午后"],
+    ]],
+    ["平衡稳定",[
+      ["单腿站立","睁30s+闭15s/个·2-3个/组·2组/天",21,180,"北医三院","下午"],
+    ]],
+    ["力量进阶",[
+      ["靠墙静蹲","30-120秒/个·2-3个/天或隔天",35,180,"北医三院","傍晚"],
+      ["双腿下蹲","10-20个/组·2-3组/天或隔天",35,180,"北医三院","傍晚"],
+      ["前向弓步","10-20个/组·2-3组/天或隔天",35,180,"北医三院","傍晚"],
+      ["后向弓步","10-20个/组·2-3组/天或隔天",35,180,"北医三院","傍晚"],
+    ]],
+    ["冰敷恢复",[
+      ["冰敷","屈膝后立即20分\n其他2-3次/天",0,180,"北医三院","屈膝后＋2-3次"],
+    ]],
+  ]
+};
+
+// ================= 工具 =================
+var WEEK = ["周日","周一","周二","周三","周四","周五","周六"];
+function postOpDay(d){
+  var s = new Date(SURGERY.getFullYear(), SURGERY.getMonth(), SURGERY.getDate());
+  var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  return Math.round((x - s) / 86400000);
+}
+function phaseLabel(day){
+  if(day<0) return "术前";
+  if(day===0) return "术后当天";
+  if(day<=3) return "术后1-3天";
+  if(day<=6) return "术后4-7天";
+  if(day<=13) return "术后1-2周";
+  if(day<=20) return "术后2-3周";
+  if(day<=34) return "术后3-5周";
+  if(day<=55) return "术后5-8周";
+  if(day<=69) return "术后8-10周";
+  return "术后10-12周";
+}
+function flexTarget(day, ver){
+  if(day<4) return "不练屈膝（以伸膝为主）";
+  if(ver==="combined"){
+    if(day<=6) return "开始被动屈膝，尝试约 90°";
+    if(day<=13) return "90°-95°";
+    if(day<=27) return "100°-110°";
+    if(day<=41) return "120°-125°";
+    if(day<=55) return "130°-135°";
+    if(day<=69) return "140°";
+    if(day<=83) return "150°";
+    return "接近正常";
+  } else {
+    if(day<=6) return "开始被动屈膝";
+    if(day<=27) return "90°-110°";
+    if(day<=55) return "110°-130°";
+    if(day<=83) return "继续增加，逐步与健侧一致";
+    return "被动膝角度接近正常";
+  }
+}
+function dateStr(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+
+// ================= 状态 =================
+var VER = "combined";
+var TODAY = new Date();
+var DAY = postOpDay(TODAY);
+var storeKey = "acl_" + VER + "_" + dateStr(TODAY);
+
+function load(){ try{ return JSON.parse(localStorage.getItem(storeKey)) || {}; }catch(e){ return {}; } }
+function save(obj){ localStorage.setItem(storeKey, JSON.stringify(obj)); }
+
+// ================= 渲染 =================
+var STATUS = ["", "✓", "△", "×"];
+var STATUS_CLS = ["", "ok", "part", "no"];
+function statusIdx(s){ return STATUS.indexOf(s) < 0 ? 0 : STATUS.indexOf(s); }
+
+function render(){
+  document.getElementById("todayLine").textContent = "今天 " + dateStr(TODAY) + " " + WEEK[TODAY.getDay()];
+  document.getElementById("pdayLine").textContent = "术后第 " + DAY + " 天";
+  document.getElementById("stageLine").textContent = "阶段：" + phaseLabel(DAY);
+  document.getElementById("flexLine").textContent = "今日屈膝目标：" + flexTarget(DAY, VER);
+
+  var flexEl = document.getElementById("flexInput");
+  var data = load();
+  flexEl.value = data.__flex__ || "";
+
+  renderList(data);
+}
+
+function renderList(data){
+  var activeHtml = "", inactiveHtml = "";
+  var nActive = 0, nDone = 0, nPart = 0;
+
+  DATA[VER].forEach(function(group){
+    var catName = group[0], items = group[1];
+    var cc = CAT_COLORS[catName];
+    var actItems = [], offItems = [];
+    items.forEach(function(it){
+      var name=it[0], dose=it[1], s=it[2], e=it[3], src=it[4], tm=it[5];
+      if(DAY>=s && DAY<=e) actItems.push(it); else offItems.push(it);
+    });
+
+    if(actItems.length){
+      activeHtml += '<div class="cat"><span class="dot" style="background:'+cc[1]+'"></span>'+catName+'</div>';
+      actItems.forEach(function(it){
+        var name=it[0], dose=it[1], s=it[2], e=it[3], src=it[4], tm=it[5];
+        var rec = data[name] || {status:"", count:0};
+        var si = statusIdx(rec.status);
+        nActive++;
+        if(rec.status==="✓") nDone++;
+        if(rec.status==="△") nPart++;
+        var srcTag = (VER==="bysy") ? "" : '<span class="src" style="background:'+(SRC_COLOR[src]||"#999")+'">'+src+'</span>';
+        activeHtml += '<div class="ex" style="--cc:'+cc[1]+'">' +
+          '<div class="st '+STATUS_CLS[si]+'" data-name="'+name+'">'+STATUS[si]+'</div>' +
+          '<div class="body">' +
+            '<div class="nm">'+name+srcTag+'</div>' +
+            '<div class="dose">'+dose.replace(/\n/g,"<br>")+'</div>' +
+            '<div class="time">🕐 '+tm+'</div>' +
+            '<div class="stepper">次数 <button data-dec="'+name+'">−</button> <b data-cnt="'+name+'">'+(rec.count||0)+'</b> <button data-inc="'+name+'">＋</button></div>' +
+          '</div></div>';
+      });
+    }
+
+    if(offItems.length){
+      inactiveHtml += '<div class="cat" style="color:#999;"><span class="dot" style="background:#c7ccd1"></span>'+catName+'</div>';
+      offItems.forEach(function(it){
+        var name=it[0], dose=it[1], s=it[2], e=it[3];
+        var reason = (DAY < s) ? ("第 "+s+" 天开始") : "已结束";
+        inactiveHtml += '<div class="ex off" style="--cc:#c7ccd1">' +
+          '<div class="st" style="color:#d5d9dd;">·</div>' +
+          '<div class="body"><div class="nm" style="color:#888;">'+name+' <span class="reason">'+reason+'</span></div>' +
+          '<div class="dose" style="color:#999;">'+dose.replace(/\n/g,"<br>")+'</div></div></div>';
+      });
+    }
+  });
+
+  document.getElementById("activeList").innerHTML = activeHtml || '<div class="hint" style="padding:8px 4px;">今天没有需要做的动作。</div>';
+  document.getElementById("inactiveList").innerHTML = inactiveHtml || '<div class="hint" style="padding:8px 4px;">（无）</div>';
+  document.getElementById("nActive").textContent = nActive;
+  document.getElementById("nDone").textContent = nDone;
+  document.getElementById("nPart").textContent = nPart;
+}
+
+// ================= 事件 =================
+document.getElementById("activeList").addEventListener("click", function(ev){
+  var t = ev.target;
+  if(t.classList.contains("st")){
+    var name = t.getAttribute("data-name");
+    var data = load();
+    var rec = data[name] || {status:"", count:0};
+    var si = statusIdx(rec.status);
+    rec.status = STATUS[(si+1)%4];
+    data[name] = rec;
+    save(data); render();
+  }
+  else if(t.hasAttribute("data-inc") || t.hasAttribute("data-dec")){
+    var nm = t.getAttribute("data-inc") || t.getAttribute("data-dec");
+    var delta = t.hasAttribute("data-inc") ? 1 : -1;
+    var data = load();
+    var rec = data[nm] || {status:"", count:0};
+    rec.count = Math.max(0, (rec.count||0) + delta);
+    data[nm] = rec;
+    save(data); render();
+  }
+});
+
+document.getElementById("verTg").addEventListener("click", function(ev){
+  var b = ev.target.closest("button"); if(!b) return;
+  VER = b.getAttribute("data-v");
+  document.querySelectorAll("#verTg button").forEach(function(x){ x.classList.toggle("on", x===b); });
+  storeKey = "acl_" + VER + "_" + dateStr(TODAY);
+  render();
+});
+
+document.getElementById("flexInput").addEventListener("change", function(ev){
+  var data = load();
+  data.__flex__ = ev.target.value;
+  save(data);
+});
+
+document.getElementById("btnExport").addEventListener("click", function(){
+  var data = load();
+  var lines = [];
+  lines.push(dateStr(TODAY) + " " + WEEK[TODAY.getDay()] + "（术后第 " + DAY + " 天 · " + (VER==="combined"?"综合版":"北医三院版") + "）");
+  if(data.__flex__) lines.push("屈膝角度：" + data.__flex__ + "°");
+  DATA[VER].forEach(function(group){
+    group[1].forEach(function(it){
+      var name=it[0], s=it[2], e=it[3];
+      if(!(DAY>=s && DAY<=e)) return;
+      var rec = data[name] || {};
+      var mark = rec.status || "·";
+      var cnt = rec.count ? (" x"+rec.count) : "";
+      lines.push(mark + " " + name + cnt);
+    });
+  });
+  var txt = lines.join("\n");
+  document.getElementById("outText").value = txt;
+  document.getElementById("modal").classList.add("show");
+});
+
+document.getElementById("btnClose").addEventListener("click", function(){
+  document.getElementById("modal").classList.remove("show");
+});
+document.getElementById("btnCopy").addEventListener("click", function(){
+  var ta = document.getElementById("outText");
+  ta.select();
+  try{ document.execCommand("copy"); alert("已复制，可粘贴到 Excel / 微信"); }
+  catch(e){ alert("复制失败，请长按文字框手动复制"); }
+});
+
+// ---- 备份 ----
+document.getElementById("btnBackup").addEventListener("click", function(){
+  var data = {};
+  for(var i=0;i<localStorage.length;i++){
+    var k = localStorage.key(i);
+    if(k && k.indexOf("acl_")===0) data[k] = localStorage.getItem(k);
+  }
+  document.getElementById("backupText").value = JSON.stringify({type:"acl_backup", saved:Object.keys(data).length, data:data});
+  document.getElementById("backupModal").classList.add("show");
+});
+document.getElementById("btnBackupCopy").addEventListener("click", function(){
+  var ta = document.getElementById("backupText");
+  ta.select();
+  try{ document.execCommand("copy"); alert("已复制备份，请粘贴到微信/备忘录保存"); }
+  catch(e){ alert("复制失败，请长按手动复制"); }
+});
+document.getElementById("btnBackupClose").addEventListener("click", function(){
+  document.getElementById("backupModal").classList.remove("show");
+});
+
+// ---- 恢复 ----
+document.getElementById("btnRestore").addEventListener("click", function(){
+  document.getElementById("restoreText").value = "";
+  document.getElementById("restoreModal").classList.add("show");
+});
+document.getElementById("btnRestoreDo").addEventListener("click", function(){
+  var txt = document.getElementById("restoreText").value.trim();
+  if(!txt){ alert("请先粘贴备份内容"); return; }
+  try{
+    var obj = JSON.parse(txt);
+    if(!obj || !obj.data || typeof obj.data !== "object") throw new Error("bad");
+    var n = 0;
+    Object.keys(obj.data).forEach(function(k){ localStorage.setItem(k, obj.data[k]); n++; });
+    document.getElementById("restoreModal").classList.remove("show");
+    render();
+    alert("已恢复 " + n + " 天的记录");
+  }catch(e){ alert("备份内容格式不正确，请重新复制完整内容"); }
+});
+document.getElementById("btnRestoreClose").addEventListener("click", function(){
+  document.getElementById("restoreModal").classList.remove("show");
+});
+
+render();
+</script>
+</body>
+</html>
